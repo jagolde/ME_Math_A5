@@ -25,13 +25,14 @@ P_C = [x ; y];
 P_i = compute_rbt(x,y,theta,box_params.P_box);
 P_iC = P_i - P_C;
 F_spring_list = zeros(2, length(box_params.k_list));
+tau_ext_list = zeros(1, length(box_params.k_list));
 for i = 1:length(box_params.k_list)
     l0 = box_params.l0_list(i);
     k = box_params.k_list(i);
-    PA = P_i(:, i);
-    PB = box_params.P_world(:, i);
+    PA = box_params.P_world(:, i); 
+    PB =  P_i(:, i);
     F_spring_list(:,i) = compute_spring_force(k,l0,PA,PB);
-    tau_ext_list = P_iC(1)*F_spring_list(2, i) - P_iC(2)*F_spring_list(1,i);
+    tau_ext_list(i) = P_iC(1, i)*F_spring_list(2, i) - P_iC(2, i)*F_spring_list(1,i);
 end
 
 F_grav = [0; -box_params.m * box_params.g];
