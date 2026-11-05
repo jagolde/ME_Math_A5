@@ -40,6 +40,7 @@ function [t_list,X_list,h_avg,num_evals, redo_count] = explicit_RK_variable_step
 
         num_evals = num_evals + num;
 
+        
         if ~redo
             t = t + h;
             XA = XB;
@@ -48,9 +49,13 @@ function [t_list,X_list,h_avg,num_evals, redo_count] = explicit_RK_variable_step
             X_list(end+1,:) = XA';
         else
             redo_count = redo_count + 1;
+            % if  redo_count == 100 
+            %     redo_count
+            %     break
+            % end
         end
         h = h_next;
-
+        
     end
 
     h_avg = (t_list(end) - t_list(1)) / (length(t_list) - 1);

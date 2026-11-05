@@ -23,19 +23,20 @@
 function [ax,ay,atheta] = compute_accel(x,y,theta,box_params)
 P_C = [x ; y];
 P_i = compute_rbt(x,y,theta,box_params.P_box);
-F_spring_list = zeros(1, length(box_params.k_list));
+P_iC = P_i - P_C;
+F_spring_list = zeros(2, length(box_params.k_list));
 for i = 1:length(box_params.k_list)
-    l0 = box_params.l0(i);
-    k = box_params.k(i);
-    PA = box_params.P_box(:, i);
+    l0 = box_params.l0_list(i);
+    k = box_params.k_list(i);
+    PA = P_i(:, i);
     PB = box_params.P_world(:, i);
-    F_spring_list(i) = compute_spring_force(k,l0,PA,PB);
+    F_spring_list(:,i) = compute_spring_force(k,l0,PA,PB);
+    
+    tau_ext_list = P_iC(1)*F_spring_list(2, i) - P_iC(2)*F_spring_list(1,i);
 end
 
-P_i = compute_rbt(x,y,theta,box_params.P_box);
-tau_ext = cross((P_i - P_C), F_spring_list); 
 F_grav = [0; -box_params.m * box_params.g];
-linear_accel = (F_grav + sum(F_spring_list)) / box_params.m;
+linear_accel = (F_grav + sum(F_spring_list,2)) / box_params.m;
 ax = linear_accel(1);
 ay = linear_accel(2);
 atheta = sum(tau_ext)/box_params.I;

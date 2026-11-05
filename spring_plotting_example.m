@@ -20,12 +20,8 @@ function update_spring_plot(spring_plot_struct,P1,P2)
 dP = P2-P1;
 R = [dP(1),-dP(2)/norm(dP);dP(2),dP(1)/norm(dP)];
 plot_pts = R*spring_plot_struct.zig_zag;
-set(spring_plot_struct.line_plot,...
-'xdata',plot_pts(1,:)+P1(1),...
-'ydata',plot_pts(2,:)+P1(2));
-set(spring_plot_struct.point_plot,...
-'xdata',[P1(1),P2(1)],...
-'ydata',[P1(2),P2(2)]);
+set(spring_plot_struct.line_plot,'xdata',plot_pts(1,:)+P1(1),'ydata',plot_pts(2,:)+P1(2));
+set(spring_plot_struct.point_plot,'xdata',[P1(1),P2(1)],'ydata',[P1(2),P2(2)]);
 end
 %create a struct containing plotting info for a single spring
 %INPUTS:
@@ -41,7 +37,7 @@ zig_zag(:,end) = [num_zigs+.5;0];
 for n = 0:(num_zigs-1)
 zig_zag(:,(3+3*n):2+3*(n+1)) = zig_ending + [n,n,n;0,0,0];
 end
-7
+
 zig_zag(1,:)=(zig_zag(1,:)-zig_zag(1,1))/(zig_zag(1,end)-zig_zag(1,1));
 zig_zag(2,:)=zig_zag(2,:)*w;
 spring_plot_struct.zig_zag = zig_zag;
