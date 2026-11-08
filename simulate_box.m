@@ -11,13 +11,13 @@ function simulate_box()
     %define per spring
     box_params.spring_number = 8;
     box_params.LG = 1.5; %m this is the length of spring compressed by gravity
-    box_params.l0 = box_params.LG * 1.5;
+    box_params.l0 = box_params.LG * 2;
     box_params.k_list = 50*(ones(1,box_params.spring_number)); % N/m
     box_params.l0_list = box_params.l0(ones(1,box_params.spring_number)); % m
 
     %define box parameters
-    box_params.LW = 10; %m
-    box_params.LH = 10; %m
+    box_params.LW = 5; %m
+    box_params.LH = 5; %m
 
     %define box boundaries
     box_params.Pbl_box = [-box_params.LW; -box_params.LH];
@@ -27,9 +27,9 @@ function simulate_box()
     box_params.boundary_pts = [box_params.Pbl_box, box_params.Pbr_box,box_params.Ptr_box, box_params.Ptl_box, box_params.Pbl_box];
 
 
-    box_params.Ptl1_world = box_params.Ptl_box + [-box_params.LG;-box_params.LG];
-    box_params.Ptl2_world = box_params.Ptl_box + [box_params.LG;-box_params.LG];
-    box_params.Ptr1_world = box_params.Ptr_box + [0;(-box_params.l0)];
+    box_params.Ptl1_world = box_params.Ptl_box + [-box_params.LG;0];
+    box_params.Ptl2_world = box_params.Ptl_box + [0;box_params.LG];
+    box_params.Ptr1_world = box_params.Ptr_box + [0;(box_params.l0)];
     box_params.Ptr2_world = box_params.Ptr_box + [box_params.l0;0];
     
     box_params.Pbl1_world = box_params.Pbl_box + [-box_params.LG;-box_params.LG];
@@ -38,10 +38,10 @@ function simulate_box()
     box_params.Pbr2_world = box_params.Pbr_box + [box_params.l0;0];
 
     box_params.P_world = [box_params.Ptl1_world,box_params.Ptl2_world,box_params.Ptr1_world,box_params.Ptr2_world, ...
-        box_params.Pbl1_world,box_params.Pbl2_world,box_params.Pbr1_world,box_params.Pbr2_world];
+        box_params.Pbr1_world,box_params.Pbr2_world, box_params.Pbl1_world,box_params.Pbl2_world];
 
     box_params.P_box = [box_params.Ptl_box,box_params.Ptl_box,box_params.Ptr_box,box_params.Ptr_box, ...
-        box_params.Pbl_box,box_params.Pbl_box,box_params.Pbr_box,box_params.Pbr_box];
+        box_params.Pbr_box,box_params.Pbr_box, box_params.Pbl_box,box_params.Pbl_box];
 
 
     %load the system parameters into the rate function
@@ -60,7 +60,7 @@ function simulate_box()
     
     
     
-    tspan = [0 10];
+    tspan = [0 20];
     h_ref = .05;
     BT_struct = struct();
     BT_struct.C = [0, 1];
@@ -76,6 +76,22 @@ function simulate_box()
     % figure;
     % plot(tlist,Vlist(:,1), 'bo')
     
+    close all    
+    P1_list = box_params.P_box;
+    P2_list = box_params.P_world;
+    fig1 = figure;
+    hold on;
+    
+    axis equal;
+    xlabel("$X$ Position (-)", Interpreter="latex");
+    ylabel("$Y$ Position (-)", Interpreter="latex");
+    title("Vibrating Box Simulation", Interpreter="latex")
+    set(gca,'TickLabelInterpreter','latex')
+    % xticks([-100 -80 -60 -40 -20 0 20 40 60])
+    fontsize(scale=2)
+    % forces the video to be high-quality
+    set(fig1,'units','pixels','position',[0 0 1440 1080])
+
     
     num_zigs = 5;
     w = .1;
@@ -86,34 +102,25 @@ function simulate_box()
     end
     
     box_plot_struct = initialize_box_plot();
-    % axis equal; axis square;
-    axis([-50,50,-50,50]);
-    P1_list = box_params.P_box;
-    P2_list = box_params.P_world;
+    
     
     for i = 1:length(Vlist)
             
             x = Vlist(i, 1);
             y = Vlist(i, 2);
             theta = Vlist(i, 3);
-            Plist_box = zeros(2, 4);
-
-            Plist_box(1, :)  = [x-(box_params.LW/2), x-(box_params.LW/2), x+(box_params.LW/2), x+(box_params.LW/2)];
-            Plist_box(2, :) = [y+(box_params.LH/2), y-(box_params.LH/2), y-(box_params.LH/2), y+(box_params.LH/2)];
-            Plist_world = compute_rbt(x,y,theta,Plist_box);
+            Plist_world = compute_rbt(x,y,theta,box_params.P_box);
            
             box_coords = struct();
-            box_coords.x = Plist_world(1, :);
-            box_coords.y = Plist_world(2, :);
+            box_coords.x = Plist_world(1, 1:2:end);
+            box_coords.y = Plist_world(2, 1:2:end);
             update_box_plot(box_plot_struct, box_coords);
             
             for j = 1:box_params.spring_number
-                update_spring_plot(spring_plot_struct_list{j}, P1_list(:, j) ,P2_list(:,j))
+                update_spring_plot(spring_plot_struct_list{j}, Plist_world(:, j) ,P2_list(:,j))
             end
-drawnow;
+            drawnow;
     end
-
-    
 
 end
 
