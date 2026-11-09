@@ -42,12 +42,13 @@
         box_params.Pbr_box,box_params.Pbr_box, box_params.Pbl_box,box_params.Pbl_box];
 
 
-    x0 = 0;
-    y0 = 0;
+    x0 = 1;
+    y0 = 0.5;
     theta0 = 0.1; 
     vx0 = 0;
     vy0 = 0;
     vtheta0 = 0;
+
 
 V0 = [x0;y0;theta0;vx0;vy0;vtheta0];
 t_in = 0;
@@ -58,13 +59,14 @@ solver_params = struct();
 
 [V_eq, exit_flag, num_calls] = multi_newton_solver(my_rate_func,V0,solver_params);
 
-[J_approx, num_calls] = approximate_jacobian(my_rate_func,V0);
+[J_approx, num_calls] = approximate_jacobian(my_rate_func,V_eq);
 
 my_linear_rate = @(t_in,V_in) J_approx*(V_in-V_eq);
 
 %small number used to scale initial perturbation
-epsilon = .1;
-V0 = V_eq + epsilon*[x0;y0;theta0;vx0;vy0;vtheta0]
+epsilon = 0.3;
+dV0 = epsilon*[x0;y0;theta0;vx0;vy0;vtheta0];
+V0 = V_eq + dV0
 tspan = [0 1];
 h_ref = .05;
 BT_struct = struct();
@@ -76,7 +78,10 @@ error_desired = .01;
 
 % run the integration of nonlinear system
 my_rate_func_2 = @(t_in, V_in) box_rate_func(t_in,V_in,box_params);
-[t_list_NL,V_list_NL] = explicit_RK_variable_step_integration(my_rate_func_2,tspan,V0,h_ref,BT_struct,p,error_desired);
+%[t_list_NL,V_list_NL] = explicit_RK_variable_step_integration(my_rate_func_2,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+
+[t_list_NL,V_list_NL] = ode45(my_rate_func_2,linspace(tspan(1),tspan(end),1001),V0);
 
 x_list_NL = V_list_NL(:,1);
 y_list_NL = V_list_NL(:,2);
@@ -84,8 +89,11 @@ theta_list_NL = V_list_NL(:,3);
 
 
 %run the integration of linear system
-[t_list_L,V_list_L,h_avg,num_evals, redo_count] = explicit_RK_variable_step_integration ...
-(my_linear_rate,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+% [t_list_L,V_list_L,h_avg,num_evals, redo_count] = explicit_RK_variable_step_integration ...
+% (my_linear_rate,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+[t_list_L,V_list_L] = ode45(my_linear_rate,linspace(tspan(1),tspan(end),1001),V0);
 
 x_list_L = V_list_L(:,1);
 y_list_L = V_list_L(:,2);
@@ -93,10 +101,17 @@ theta_list_L = V_list_L(:,3);
 
 
 figure(1);
+
 subplot(3, 1, 1)
+
+xmax = max(max(x_list_NL),max(x_list_L));
+xmin = min(min(x_list_NL),min(x_list_L));
+dx = xmax-xmin;
+
 hold on;
+ylim([xmin-.5*dx,xmax+.5*dx]);
 plot(t_list_NL,x_list_NL,"r",DisplayName='Non Linear');
-plot(t_list_L,x_list_L,"b",DisplayName='Linear');
+plot(t_list_L,x_list_L,"b--",DisplayName='Linear');
 
 xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
 ylabel('$x\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
@@ -106,23 +121,23 @@ legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
 subplot(3, 1, 2)
 hold on;
 plot(t_list_NL,y_list_NL,"r");
-plot(t_list_L,y_list_L,"b");
+plot(t_list_L,y_list_L,"b--");
 
 xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
 ylabel('$y\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
 title({'Linear v. Non-linear Y Values'}, 'Interpreter', 'latex', 'FontSize', 13)
-legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
+% legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
 
 
 subplot(3, 1, 3)
 hold on;
 plot(t_list_NL,theta_list_NL,"r");
-plot(t_list_L,theta_list_L,"b");
+plot(t_list_L,theta_list_L,"b--");
 
 xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
 ylabel('$theta\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
 title({'Linear v. Non-linear Theta Values'}, 'Interpreter', 'latex', 'FontSize', 13)
-legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
+% legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
 
 
 
