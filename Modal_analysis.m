@@ -57,14 +57,14 @@ my_rate_func = @(V_in) box_rate_func(t_in,V_in,box_params);
 
 solver_params = struct();
 
-[V_eq, exit_flag, num_calls] = multi_newton_solver(my_rate_func,V0,solver_params);
+[V_eq, exit_flag, ~] = multi_newton_solver(my_rate_func,V0,solver_params);
 
-[J_approx, num_calls] = approximate_jacobian(my_rate_func,V_eq);
+[J_approx, ~] = approximate_jacobian(my_rate_func,V_eq);
 
 my_linear_rate = @(t_in,V_in) J_approx*(V_in-V_eq);
 
 %small number used to scale initial perturbation
-epsilon = 0.3;
+epsilon = 0.003;
 dV0 = epsilon*[x0;y0;theta0;vx0;vy0;vtheta0];
 V0 = V_eq + dV0;
 tspan = [0 1];
@@ -101,7 +101,6 @@ theta_list_L = V_list_L(:,3);
 
 
 figure();
-
 subplot(3, 1, 1)
 
 xmax = max(max(x_list_NL),max(x_list_L));
@@ -151,29 +150,65 @@ Q(3, :) = -J_approx(6, 1:3);
 omega_n_list = diag(D);
 
 
+for i = 1:length(omega_n_list)
+    U_mode = V(:,i);
+    omega_n = sqrt(omega_n_list(i));
+    V0 = V_eq + epsilon*[U_mode;0;0;0];
+    
+    [t_list_M, V_list_NL] = ode45(my_rate_func_2,linspace(tspan(1),tspan(end),1001),V0);
+    x_modal = V_eq(1)+epsilon*U_mode(1)*cos(omega_n*t_list_M);
+    y_modal = V_eq(2)+epsilon*U_mode(2)*cos(omega_n*t_list_M);
+    theta_modal = V_eq(3)+epsilon*U_mode(3)*cos(omega_n*t_list_M);
 
-%small number
-epsilon = 0.001;
+    x_list_NL = V_list_NL(:,1);
+    y_list_NL = V_list_NL(:,2);
+    theta_list_NL = V_list_NL(:,3);
 
-tspan = [0 10]
 
+    figure;
 
-for i = length(omega_n_list)
-U_mode = V(:,i);
-omega_n = omega_n_list(i);
-
-V0 = Veq + epsilon*[Umode;0;0;0];
-
-x_modal = Veq(1)+epsilon*Umode(1)*cos(omega_n*tlist);
-y_modal = Veq(2)+epsilon*Umode(2)*cos(omega_n*tlist);
-theta_modal = Veq(3)+epsilon*Umode(3)*cos(omega_n*tlist);
-
-[t_list_NL,V_list_NL] = ode45(my_rate_func_2,linspace(tspan(1),tspan(end),1001),V0);
-x_list_NL = V_list_NL(:,1);
-y_list_NL = V_list_NL(:,2);
-theta_list_NL = V_list_NL(:,3);
-
+    subplot(3, 1, 1)
+    hold on;
+    xmax = max(max(x_list_NL),max(x_modal));
+    xmin = min(min(x_list_NL),min(x_modal));
+    dx = xmax-xmin;
+    ylim([xmin-.5*dx,xmax+.5*dx]);
+    plot(t_list_M,x_list_NL,"r",DisplayName='Non Linear');
+    plot(t_list_M, x_modal,"b--",DisplayName='Modal');
+    
+    xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+    ylabel('$x\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+    title({'Modal v. Non-linear X Values'}, 'Interpreter', 'latex', 'FontSize', 13)
+    legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
+    
+    subplot(3, 1, 2)
+    ymax = max(max(y_list_NL),max(y_modal));
+    ymin = min(min(y_list_NL),min(y_modal));
+    dy = ymax-ymin;
+    ylim([ymin-.5*dy,ymax+.5*dy]);
+    hold on;
+    plot(t_list_M,y_list_NL,"r");
+    plot(t_list_M,y_modal,"b--");
+    
+    xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+    ylabel('$y\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+    title({'Modal v. Non-linear Y Values'}, 'Interpreter', 'latex', 'FontSize', 13)
+      
+    
+    subplot(3, 1, 3)
+    hold on;
+    thetamax = max(max(theta_list_NL),max(theta_modal));
+    thetamin = min(min(theta_list_NL),min(theta_modal));
+    dtheta = thetamax-thetamin;
+    ylim([thetamin-.5*dtheta,thetamax+.5*dtheta]);
+    plot(t_list_M,theta_list_NL,"r");
+    plot(t_list_M,theta_modal,"b--");
+    
+    xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+    ylabel('$theta\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+    title({'Modal v. Non-linear Theta Values'}, 'Interpreter', 'latex', 'FontSize', 13)
 end
+
 
 
 
