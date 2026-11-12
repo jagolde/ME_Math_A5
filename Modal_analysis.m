@@ -66,7 +66,7 @@ my_linear_rate = @(t_in,V_in) J_approx*(V_in-V_eq);
 %small number used to scale initial perturbation
 epsilon = 0.3;
 dV0 = epsilon*[x0;y0;theta0;vx0;vy0;vtheta0];
-V0 = V_eq + dV0
+V0 = V_eq + dV0;
 tspan = [0 1];
 h_ref = .05;
 BT_struct = struct();
@@ -100,7 +100,7 @@ y_list_L = V_list_L(:,2);
 theta_list_L = V_list_L(:,3);
 
 
-figure(1);
+figure();
 
 subplot(3, 1, 1)
 
@@ -139,6 +139,41 @@ ylabel('$theta\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
 title({'Linear v. Non-linear Theta Values'}, 'Interpreter', 'latex', 'FontSize', 13)
 % legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
 
+
+
+%% 
+Q = zeros(3, 3);
+Q(1, :) = -J_approx(4, 1:3);
+Q(2, :) = -J_approx(5, 1:3);
+Q(3, :) = -J_approx(6, 1:3);
+ 
+[V, D] = eig(Q);
+omega_n_list = diag(D);
+
+
+
+%small number
+epsilon = 0.001;
+
+tspan = [0 10]
+
+
+for i = length(omega_n_list)
+U_mode = V(:,i);
+omega_n = omega_n_list(i);
+
+V0 = Veq + epsilon*[Umode;0;0;0];
+
+x_modal = Veq(1)+epsilon*Umode(1)*cos(omega_n*tlist);
+y_modal = Veq(2)+epsilon*Umode(2)*cos(omega_n*tlist);
+theta_modal = Veq(3)+epsilon*Umode(3)*cos(omega_n*tlist);
+
+[t_list_NL,V_list_NL] = ode45(my_rate_func_2,linspace(tspan(1),tspan(end),1001),V0);
+x_list_NL = V_list_NL(:,1);
+y_list_NL = V_list_NL(:,2);
+theta_list_NL = V_list_NL(:,3);
+
+end
 
 
 
